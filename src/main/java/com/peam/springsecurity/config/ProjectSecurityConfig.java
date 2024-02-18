@@ -4,13 +4,16 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+
+import javax.sql.DataSource;
 
 @Configuration
 public class ProjectSecurityConfig {
@@ -28,25 +31,8 @@ public class ProjectSecurityConfig {
     }
 
     @Bean
-    public InMemoryUserDetailsManager userDetailsService(){
-        /*
-        Approach using NoOpPasswordEncoderBean instead which
-        is not used in production since it does not apply any
-        encryption on the password.
-         */
-
-        UserDetails user1 = User.withUsername("dev1")
-                .password("126974")
-                .authorities("admin")
-                .build();
-
-        UserDetails user2 = User.withUsername("user1")
-                .password("004653")
-                .authorities("read")
-                .build();
-
-        return new InMemoryUserDetailsManager(user1, user2);
-
+    public UserDetailsService userDetailsService(DataSource dataSource){
+        return new JdbcUserDetailsManager(dataSource);
     }
 
     @Bean
