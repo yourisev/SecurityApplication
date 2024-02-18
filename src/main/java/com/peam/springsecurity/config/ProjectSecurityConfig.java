@@ -7,6 +7,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
@@ -28,22 +30,27 @@ public class ProjectSecurityConfig {
     @Bean
     public InMemoryUserDetailsManager userDetailsService(){
         /*
-        Approach using the DefaultPasswordEncoder() to create the in memory user details
+        Approach using NoOpPasswordEncoderBean instead which
+        is not used in production since it does not apply any
+        encryption on the password.
          */
 
-        UserDetails user1 = User.withDefaultPasswordEncoder()
-                .username("dev1")
+        UserDetails user1 = User.withUsername("dev1")
                 .password("126974")
                 .authorities("admin")
                 .build();
 
-        UserDetails user2 = User.withDefaultPasswordEncoder()
-                .username("user1")
+        UserDetails user2 = User.withUsername("user1")
                 .password("004653")
                 .authorities("read")
                 .build();
 
         return new InMemoryUserDetailsManager(user1, user2);
 
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder(){
+        return NoOpPasswordEncoder.getInstance();
     }
 }
