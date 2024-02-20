@@ -37,7 +37,7 @@ public class ProjectSecurityConfig {
                         return configuration;
                     }
                 }) ).
-                csrf((csrf) -> csrf.disable()).authorizeHttpRequests((requests) -> {
+                authorizeHttpRequests((requests) -> {
             requests.requestMatchers("/myAccount","/myBalance","/myLoans","/myCards","/user").authenticated()
                     .requestMatchers("/contact","/notices","/register").permitAll()
                     .anyRequest().permitAll();
