@@ -1,5 +1,6 @@
 package com.peam.springsecurity.config;
 
+import com.peam.springsecurity.model.Authority;
 import com.peam.springsecurity.repository.CustomerRepository;
 import com.peam.springsecurity.model.Customer;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Component
 public class CustomBankUserNamePasswordAuthenticationProvider implements AuthenticationProvider {
@@ -36,15 +38,23 @@ public class CustomBankUserNamePasswordAuthenticationProvider implements Authent
 
         if(customer.size() > 0) {
             if(passwordEncoder.matches(password,customer.get(0).getPwd())){
-                List<GrantedAuthority> authorities = new ArrayList<>();
-                authorities.add(new SimpleGrantedAuthority(customer.get(0).getRole()));
-                return new UsernamePasswordAuthenticationToken(username, password,authorities);
+                return new UsernamePasswordAuthenticationToken(username, password,getGrantedAuthorities(customer.get(0).getAuthorities()));
             }else{
                 throw new BadCredentialsException("Invalid password!");
             }
         }else{
             throw new BadCredentialsException("No user registered with this details!");
         }
+    }
+
+    private List<GrantedAuthority> getGrantedAuthorities(Set<Authority> authorities){
+
+        List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
+        for (Authority authority : authorities
+             ) {
+            grantedAuthorities.add(new SimpleGrantedAuthority(authority.getName()));
+        }
+        return grantedAuthorities;
     }
 
     @Override
