@@ -1,6 +1,9 @@
 package com.peam.springsecurity.config;
 
+import com.peam.springsecurity.filter.AuthoritiesLoggingAfterFilter;
+import com.peam.springsecurity.filter.AuthoritiesLoggingAtFilter;
 import com.peam.springsecurity.filter.CsrfCookieFilter;
+import com.peam.springsecurity.filter.RequestValidationBeforeFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -50,12 +53,15 @@ public class ProjectSecurityConfig {
                     csrf.csrfTokenRequestHandler(requestHandler).ignoringRequestMatchers("/contact","/register").
                             csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse());
 
-                }).addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class).
-                authorizeHttpRequests((requests) -> {
-            requests.requestMatchers("/myAccount").hasAuthority("VIEWACCOUNT")
-                    .requestMatchers("/myBalance").hasAnyAuthority("VIEWACCOUNT","VIEWBALANCE")
-                    .requestMatchers("/myLoans").hasAuthority("VIEWLOANS")
-                    .requestMatchers("/myCards").hasAuthority("VIEWCARDS")
+                }).addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
+                .addFilterBefore(new RequestValidationBeforeFilter(),BasicAuthenticationFilter.class)
+                .addFilterAt(new AuthoritiesLoggingAtFilter(),BasicAuthenticationFilter.class)
+                .addFilterAfter(new AuthoritiesLoggingAfterFilter(),BasicAuthenticationFilter.class)
+        .authorizeHttpRequests((requests) -> {
+            requests.requestMatchers("/myAccount").hasRole("USER")
+                    .requestMatchers("/myBalance").hasAnyRole("USER","ADMIN")
+                    .requestMatchers("/myLoans").hasRole("USER")
+                    .requestMatchers("/myCards").hasRole("USER")
                     .requestMatchers("/user").authenticated()
                     .requestMatchers("/contact","/notices","/register").permitAll()
                     .anyRequest().permitAll();
