@@ -1,9 +1,6 @@
 package com.peam.springsecurity.config;
 
-import com.peam.springsecurity.filter.AuthoritiesLoggingAfterFilter;
-import com.peam.springsecurity.filter.AuthoritiesLoggingAtFilter;
-import com.peam.springsecurity.filter.CsrfCookieFilter;
-import com.peam.springsecurity.filter.RequestValidationBeforeFilter;
+import com.peam.springsecurity.filter.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,6 +23,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 
 import javax.sql.DataSource;
+import java.util.Arrays;
 import java.util.Collections;
 
 @Configuration
@@ -36,8 +34,9 @@ public class ProjectSecurityConfig {
 
         CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
         requestHandler.setCsrfRequestAttributeName("_csrf");
-        http.securityContext((context) -> {context.requireExplicitSave(false);}).
-                sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.ALWAYS))
+        http.sessionManagement((sessionManagement) ->
+            sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
                 .cors((cors) -> cors.configurationSource(new CorsConfigurationSource() {
                     @Override
                     public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
@@ -46,6 +45,7 @@ public class ProjectSecurityConfig {
                         configuration.setAllowedMethods(Collections.singletonList("*"));
                         configuration.setAllowCredentials(true);
                         configuration.setAllowedHeaders(Collections.singletonList("*"));
+                        configuration.setExposedHeaders(Arrays.asList("Authorization"));
                         configuration.setMaxAge(3600L);
                         return configuration;
                     }
@@ -57,10 +57,12 @@ public class ProjectSecurityConfig {
                 .addFilterBefore(new RequestValidationBeforeFilter(),BasicAuthenticationFilter.class)
                 .addFilterAt(new AuthoritiesLoggingAtFilter(),BasicAuthenticationFilter.class)
                 .addFilterAfter(new AuthoritiesLoggingAfterFilter(),BasicAuthenticationFilter.class)
+                .addFilterAfter(new JWTTokenGeneratorFilter(), BasicAuthenticationFilter.class)
+                .addFilterBefore(new JWTTokenValidatorFilter(), BasicAuthenticationFilter.class)
         .authorizeHttpRequests((requests) -> {
             requests.requestMatchers("/myAccount").hasRole("USER")
                     .requestMatchers("/myBalance").hasAnyRole("USER","ADMIN")
-                    .requestMatchers("/myLoans").hasRole("USER")
+                    .requestMatchers("/myLoans").authenticated()
                     .requestMatchers("/myCards").hasRole("USER")
                     .requestMatchers("/user").authenticated()
                     .requestMatchers("/contact","/notices","/register").permitAll()
@@ -68,7 +70,7 @@ public class ProjectSecurityConfig {
         });
         http.formLogin(Customizer.withDefaults());
         http.httpBasic(Customizer.withDefaults());
-        return (SecurityFilterChain)http.build();
+        return http.build();
     }
 
     @Bean
